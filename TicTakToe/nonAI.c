@@ -18,23 +18,28 @@ void printBoard(int board[], char player1, char player2){
     }
 }
 
-int isWinner(int board[], int player){
+int isValid(int idx, int board[]){
+    return (board[idx] == 0 && (idx >= 0 && idx < size)
+    );
+}
+
+int isWinner(int board[]){
     int row = sqrt(size);
     for (int i = 0; i < row; i += row){
-        if ((board[i] == board[i+1]) && (board[i] == board[i+2]) && (board[i] == player))
-            return 1;
+        if ((board[i] == board[i+1]) && (board[i] == board[i+2]))
+            return board[i];
     }
 
     for (int i = 0; i < row; i++){
-        if ((board[i] == board[i+row]) && (board[i] == board[i+row+row]) && (board[i] == player))
-            return 1;
+        if ((board[i] == board[i+row]) && (board[i] == board[i+row+row]))
+            return board[i];
     }
 
-    if ((board[0] == board[4]) && (board[0] == player) &&(board[8] == board[0]))
-        return 1;
+    if ((board[0] == board[4]) &&(board[8] == board[0]))
+        return board[4];
 
-    if ((board[2] == board[4]) && (board[2] == player) && (board[6] == player))
-        return 1;    
+    if ((board[2] == board[4]) && (board[6] == board[4]))
+        return board[4];    
 
     return 0;
 }
@@ -45,7 +50,6 @@ int humanMoves(int board[]){
     getchar();
     scanf("%d", &idx);
 
-    //printf("\nIdx: %d\n", idx);
     if (idx <= 0 || idx > 9 || board[idx-1] != 0){
         printf("\nEnter valid index.\n");
         return humanMoves(board);
@@ -53,10 +57,10 @@ int humanMoves(int board[]){
     return idx-1;
 }
 
-int canWin(int board[], char player){
+int canWin(int board[], char ch){
+    int player = ch == 'X' ? 1: 2;
     int row = sqrt(size);
     for (int i = 0; i < row; i += row){
-        //printf("R: %d %d %d\n", board[i], board[i+1],board[i+2]);
         if ((board[i] == board[i+1]) && (board[i+2] == 0) && (board[i] == player))
             return i+2;
         if ((board[i] == board[i+2]) && (board[i+1] == 0) && (board[i] == player))
@@ -66,7 +70,6 @@ int canWin(int board[], char player){
     }
 
     for (int i = 0; i < row; i++){
-        //printf("C: %d %d %d\n", board[i], board[i+row],board[i+row+row]);
         if ((board[i] == board[i+row]) && (board[i+row+row] == 0) && (board[i] == player))
             return i+row+row;
         if ((board[i+row+row] == board[i+row]) && (board[i] == 0) && (board[i+row] == player))
@@ -99,25 +102,24 @@ int canWin(int board[], char player){
 int AImoves(int board[], int moves){
     printf("\nComputer is playing...\n");
     int idx = canWin(board, AI), idx2 = canWin(board, HUMAN);
-    if (moves == 0)
+    if (moves == 0 && board[4] == 0)
         return 4;
     if (idx != -1)
         return idx;
     else if (idx2 != -1)
-        return idx;
+        return idx2;
     else{
-       int i = rand()%8 + 1;
-       //printf("move %d\n", i);
-       while (board[i] != 0){
-           //printf("move %d\n", i);
-           i = rand()%4 + 1;
-       } 
+        int i = rand()%8 + 1;
+        //printf("i: %d\n", i);
+        while (!isValid(i, board)){
+            //printf("i: %d", i);
+            i = rand()%8 + 1;
+        } 
        return i;
     }
 }
 
 int getMoves(int board[], char player, int moves){
-    //return humanMoves(board);
     return player == HUMAN ? humanMoves(board) : AImoves(board, moves);
 }
 
@@ -126,27 +128,28 @@ char initGame(char player1, char player2){
     int moves = 0, idx;
 
     while (moves < size){
-        printBoard(board, player1, player2);
-        //printf("\nPlayer 1");
-        idx = getMoves(board, player1, moves);
-        //printf("init %d\n", idx);
-        board[idx] = 1;
-        if (isWinner(board, 1) != 0){
-            //printf("isinWin\n");
+        int winner = isWinner(board);
+        if (winner != 0){
             printBoard(board, player1, player2);
-            return player1;
+            return winner;
+        }
+        printBoard(board, player1, player2);
+        idx = getMoves(board, player1, moves);
+        board[idx] = 1;
+        moves++;
+
+        if (moves == 9){
+            printBoard(board, player1, player2);
+            return '#';
         }
 
-        printBoard(board, player1, player2);
-        //printf("\nPlayer 2");
-        idx = getMoves(board, player2, moves);
-        printf("\nAI move %d\n", idx);
-        board[idx] = 2;
-        if (isWinner(board, 2) != 0){
-            //printf("isinWin\n");
+        if (winner != 0){
             printBoard(board, player1, player2);
-            return player2;
-        }  
+            return winner;
+        }
+        printBoard(board, player1, player2);
+        idx = getMoves(board, player2, moves);
+        board[idx] = 2;
         moves++;      
     }
 
@@ -170,6 +173,13 @@ int main(){
     }
 
     char winner = initGame(player1, player2);
-    printf("\n\nWinner is %c", winner);
+
+    if (winner == '#')
+        printf("It's a draw!\nUp for another one?\n");
+    else if (winner == HUMAN)
+        printf("Hey, Winner!\n");
+    else
+        printf("HAHA, better luck next time :P\n");
+
     return 0;
 }
