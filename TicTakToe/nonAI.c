@@ -143,6 +143,7 @@ char initGame(char player1, char player2){
             return '#';
         }
 
+        winner = isWinner(board);
         if (winner != 0){
             printBoard(board, player1, player2);
             return winner;
